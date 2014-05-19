@@ -1070,21 +1070,34 @@ function display_tasks()
 		echo '</td><td><a href="'.$_SERVER['PHP_SELF'].'?display_task='.$res["task_id"].'" style="color:blue;">display info</a></td></tr>';
 	}
 	echo '
-    		</table>
-		<form action="'.$_SERVER['PHP_SELF'].'" method="GET">
-			<input type="hidden" name="display_tasks" />
-			Display <select name="nb">';
-	if($count_s != 10)
-		echo '
-				<option value="'.$count_s.'">'.$count_s.'</option>';
-	echo '
-				<option value="10">10</option>
-				<option value="30">30</option>
-				<option value="50">50</option>
-				<option value="100">100</option>
-			</select> tasks starting from <input type="text" name="st" size="3" value="'.$start_s.'" /> <input type="submit" name="OK" value="OK" />
-		</form>
-   	 </div>';
+                </table>
+                <a href="'.$_SERVER['PHP_SELF'].'?display_tasks&st='.($start_s - $count_s).'&nb='.$count_s.'">&lt;--</a>&nbsp;
+                <a href="'.$_SERVER['PHP_SELF'].'?display_tasks&st='.($start_s + $count_s).'&nb='.$count_s.'">&gt;--</a>
+                <br />
+                <form action="'.$_SERVER['PHP_SELF'].'" method="GET">
+                        <input type="hidden" name="display_tasks" />
+                        PAGE <select name="st" />';
+        for($i = 0; $i < $nb_pages; $i++)
+        {
+                $sel = '';
+                if($i*$count_s == $start_s)
+                        $sel = " selected ";
+                echo '<option value="'.$i*$count_s.'"'.$sel.'>'.($i + 1).'</option>';
+        }
+
+        echo '</select><input type="submit" value="OK" />
+                        Display <select name="nb">';
+        if($count_s != 10)
+                echo '
+                                <option value="'.$count_s.'">'.$count_s.'</option>';
+        echo '
+                                <option value="10">10</option>
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                        </select> results.
+                </form>
+         </div>';
 	echo $tasks_footer;
 }
 ?>
