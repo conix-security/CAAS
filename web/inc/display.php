@@ -163,10 +163,10 @@ $header = '<html>
     </style> 
     <body id="body_scroll">
 	<h1>
-		<a href="'.$_SERVER['PHP_SELF'].'" class="'.$main_menu_class.'">ALERTS</a>&nbsp;
+		<a href="'.$_SERVER['PHP_SELF'].'" class="'.$main_menu_class.'">HOME</a>&nbsp;
+                <a href="'.$_SERVER['PHP_SELF'].'?display_alerts" class="'.$alerts_menu_class.'">ALERTS</a>&nbsp;
 		<a href="'.$_SERVER['PHP_SELF'].'?display_tasks" class="'.$dt_menu_class.'">TASKS</a>&nbsp;
 		<a href="'.$_SERVER['PHP_SELF'].'?config" class="'.$config_menu_class.'">CONFIG</a>&nbsp;
-                <a href="'.$_SERVER['PHP_SELF'].'?display_alerts" class="'.$alerts_menu_class.'">ALERTS</a>&nbsp;
 		<a href="'.$_SERVER['PHP_SELF'].'?search" class="'.$search_menu_class.'">SEARCH</a>&nbsp;
 		<a href="'.$_SERVER['PHP_SELF'].'?sql_query" class="'.$sql_menu_class.'">SQL QUERY</a>
 		<a href="'.$_SERVER['PHP_SELF'].'?meta_sign" class="'.$meta_menu_class.'">RULES</a>
