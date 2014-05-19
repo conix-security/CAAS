@@ -22,6 +22,7 @@ if(!defined("__INCLUDED__"))
 $dt_menu_class = "menu";
 $config_menu_class = "menu";
 $search_menu_class = "menu";
+$alerts_menu_class = "menu";
 $sql_menu_class = "menu";
 $meta_menu_class = "menu";
 $main_menu_class = "menu";
@@ -31,6 +32,8 @@ elseif(isset($_GET['config']))
 	$config_menu_class = "menu_selected";
 elseif(isset($_GET['search']))
 	$search_menu_class = "menu_selected";
+elseif(isset($_GET['display_alerts']))
+	        $alerts_menu_class = "menu_selected";
 elseif(isset($_GET['sql_query']))
 	$sql_menu_class = "menu_selected";
 elseif(isset($_GET['meta_sign']))
@@ -163,6 +166,7 @@ $header = '<html>
 		<a href="'.$_SERVER['PHP_SELF'].'" class="'.$main_menu_class.'">ALERTS</a>&nbsp;
 		<a href="'.$_SERVER['PHP_SELF'].'?display_tasks" class="'.$dt_menu_class.'">TASKS</a>&nbsp;
 		<a href="'.$_SERVER['PHP_SELF'].'?config" class="'.$config_menu_class.'">CONFIG</a>&nbsp;
+                <a href="'.$_SERVER['PHP_SELF'].'?display_alerts" class="'.$alerts_menu_class.'">ALERTS</a>&nbsp;
 		<a href="'.$_SERVER['PHP_SELF'].'?search" class="'.$search_menu_class.'">SEARCH</a>&nbsp;
 		<a href="'.$_SERVER['PHP_SELF'].'?sql_query" class="'.$sql_menu_class.'">SQL QUERY</a>
 		<a href="'.$_SERVER['PHP_SELF'].'?meta_sign" class="'.$meta_menu_class.'">RULES</a>
@@ -420,22 +424,69 @@ function display_main()
 	if($task_id != 0)
 		echo '
 	New task with ID #'.secure_display($task_id).' created.';
-	echo '
-	<form action="'.$_SERVER['PHP_SELF'].'" method="POST" enctype="multipart/form-data">'.gen_csrf().'<input type="file" name="sample" /><input type="submit" name="OK" value="OK" /></form>
-	<h1>ALERTS</h1>
-	<table>
-		<tr><th class="std">CRITICITY</th><th class="std">LABEL</th><th class="std">DESCRIPTION</th><th class="std">TASK</th></tr>';
-	$alertz = get_alertz(0,10);
-	while($alert = $alertz->fetchArray())
-	{
-		$criticity = '<span style="color:green">Low</span>';
-		if($alert['criticity'] == 2)
-			$criticity = '<span style="color:orange">Medium</span>';
-		elseif($alert['criticity'] == 1)
-			$criticity = '<span style="color:red">High</span>';
-		echo '<tr><td>'.$criticity.'</td><td>'.secure_display($alert['label']).'</td><td>'.secure_display($alert['description']).'</td><td><a href="'.$_SERVER['PHP_SELF'].'?display_task='.intval($alert['task_id']).'">'.secure_display($alert['task_id']).'</a></td></tr>';
-	}
-	echo '</table>';
+	echo '<form action="" method="POST" enctype="multipart/form-data">'.gen_csrf().'<input type="file" name="sample" /><input type="submit" value="Submit" /></form>';
+}
+function display_alerts()
+{
+        global $tasks_header,$tasks_footer;
+        echo $tasks_header;
+
+        $start = 0;
+        $count = 10;
+        $start_s = 0;
+        $count_s = 10;
+        if(isset($_GET["st"]) && isset($_GET["nb"]))
+        {
+                $start = $_GET["st"];
+                $count = $_GET["nb"];
+                $start_s = intval($_GET["st"]);
+                $count_s = intval($_GET["nb"]);
+        }
+        $alert_count = get_alerts_count();
+        $nb_pages = $alert_count / $count_s;
+        $alertz = get_alertz($start,$count); // security checks done in db.php :]
+        echo '
+            <div class="container100">
+                <table class="std">
+                <tr><th class="std">CRITICITY</th><th class="std">LABEL</th><th class="std">DESCRIPTION</th><th class="std">TASK</th></tr>';
+        while($alert = $alertz->fetchArray())
+        {
+                $criticity = '<span style="color:green">Low</span>';
+                if($alert['criticity'] == 2)
+                        $criticity = '<span style="color:orange">Medium</span>';
+                elseif($alert['criticity'] == 1)
+                        $criticity = '<span style="color:red">High</span>';
+                echo '<tr><td>'.$criticity.'</td><td>'.secure_display($alert['label']).'</td><td>'.secure_display($alert['description']).'</td><td><a href="'.$_SERVER['PHP_SELF'].'?display_task='.intval($alert['task_id']).'">'.secure_display($alert['task_id']).'</a></td></tr>';
+        }
+        echo '
+                </table>
+                <a href="'.$_SERVER['PHP_SELF'].'?display_alerts&st='.($start_s - $count_s).'&nb='.$count_s.'">&lt;--</a>&nbsp;
+                <a href="'.$_SERVER['PHP_SELF'].'?display_alerts&st='.($start_s + $count_s).'&nb='.$count_s.'">&gt;--</a>
+                <br />
+                <form action="'.$_SERVER['PHP_SELF'].'" method="GET">
+                        <input type="hidden" name="display_alerts" />
+                        PAGE <select name="st" />';
+        for($i = 0; $i < $nb_pages; $i++)
+        {
+                $sel = '';
+                if($i*$count_s == $start_s)
+                        $sel = " selected ";
+                echo '<option value="'.$i*$count_s.'"'.$sel.'>'.($i + 1).'</option>';
+        }
+
+        echo '</select><input type="submit" value="OK" />
+                        Display <select name="nb">';
+        if($count_s != 10)
+                echo '
+                                <option value="'.$count_s.'">'.$count_s.'</option>';
+        echo '
+                                <option value="10">10</option>
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                        </select> results.
+                </form>
+         </div>';
 }
 function display_analysis($analysis_id,$display_json=False)
 {
@@ -498,7 +549,8 @@ function display_config()
 {
 	global $enable_usermode_analysis,$enable_kernelmode_analysis,$parse_metadata,$autodownload_reports,$kernelmode_score_medium,$kernelmode_score_high,$usermode_score_medium,$usermode_score_high,$kernelmode_timeout,$usermode_timeout,$sampling;
 	echo '
-	<h1>CONFIGURATION</h1>';
+	<h1>CONFIGURATION</h1>
+        <h2 style="color:red;">NOT FUNCTIONAL</h2>';
 	$form_b = '';
 	$form_e = '<a href="'.$_SERVER['PHP_SELF'].'?config&edit_main">EDIT</a>';
 	if(!isset($_GET["edit_main"]))
@@ -543,7 +595,6 @@ function display_config()
 	}
 	echo '
 	<h2>Main config</h2>
-	<span style="color:red">SI UN TOCARD TOUCHE A LA CONF, J\'LE BUTE.</span>
 	<div class="container100">'.$form_b.'<table class="std">
 		<tr><th class="std">SETTING</th><th class="std">VALUE</th></tr>
 		<tr><td>USERMODE ANALYSIS</td><td>'.$usermode.'</td></tr>
