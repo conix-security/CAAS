@@ -117,6 +117,10 @@ if(isset($_GET["display_task"]))
 	display_task($tid);
 	
 }
+elseif(isset($_GET["display_alerts"]))
+{
+        display_alerts();
+}
 elseif(isset($_GET["display_json"]))
 {
 	$tid = $_GET["display_json"];
