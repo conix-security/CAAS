@@ -1,0 +1,7 @@
+/db/db.db
+/binaries
+/binaries/*
+/log
+/log/*
+/results
+/results/*
