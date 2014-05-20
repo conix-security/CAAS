@@ -1056,6 +1056,8 @@ function display_tasks()
 		$start_s = intval($_GET["st"]);
 		$count_s = intval($_GET["nb"]);
 	}
+	$task_count = get_alerts_count();
+	$nb_pages = $task_count / $count_s;
 	$req = get_tasks($start,$count); // security checks done in db.php :]
 	echo '
 	    <div class="container100">
