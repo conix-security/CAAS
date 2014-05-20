@@ -189,6 +189,18 @@ function get_triggerz()
 	$results = query_db("SELECT name,sql FROM sqlite_master WHERE type = 'trigger'");
 	return $results;
 }
+function get_task_alerts($task_id)
+{
+	global $db_handler;
+	$task_id_s = secure_sql($task_id);
+	if(!is_numeric($task_id_s))
+	{
+		error("[get_task_metadata] Task ID not int: ".$task_id_s,"SECURITY");
+		return NULL;
+	}
+	$results = query_db("SELECT triggz_id,task_id,label,description,criticity FROM triggz WHERE task_id = '".$task_id_s."' ORDER BY triggz_id DESC");
+	return $results;
+}
 function get_task_metadata($task_id)
 {
 	global $db_handler;
