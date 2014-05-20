@@ -300,7 +300,7 @@ function display_metadata($task_id,$display_header)
 </table></div>';
 	}
 }
-function get_source_info($source_type,$source_id)
+function get_source_info($source_type,$source_id,$raw=FALSE)
 {
 	$source_type_data = get_source_type_title($source_type);
 	if($source_type_data)
@@ -309,7 +309,12 @@ function get_source_info($source_type,$source_id)
 		if($source_type_info)
 		{
 			if($source_type_info['title'] == "manual")
-				return "MANUAL SUBMISSION";
+			{
+				if(!$raw)
+					return "MANUAL SUBMISSION";
+				else
+					return "MANUAL";
+			}
 			if($source_type_info['title'] == "local")
 			{
 				$source_data = get_local_source($source_id);
@@ -317,7 +322,12 @@ function get_source_info($source_type,$source_id)
 				{
 					$source_info = $source_data->fetchArray();
 					if($source_info)
-						return "LOCAL SUBMISSION FROM ".secure_display($source_info["lookup_folder"]);
+					{
+						if(!$raw)
+							return "LOCAL SUBMISSION FROM ".secure_display($source_info["lookup_folder"]);
+						else
+							return "LOCAL: ".secure_display($source_info["lookup_folder"]);
+					}
 				}
 			}
 			elseif($source_type_info['title'] == "remote")
@@ -327,7 +337,12 @@ function get_source_info($source_type,$source_id)
 				{
 					$source_info = $source_data->fetchArray();
 					if($source_info)
-						return "REMOTE SUBMISSION FROM ".secure_display($source_info["remote_ip_addr"]);
+					{
+						if(!$raw)
+							return "REMOTE SUBMISSION FROM ".secure_display($source_info["remote_ip_addr"]);
+						else
+							return "REMOTE: ".secure_display($source_info["remote_ip_addr"]);
+					}
 				}
 			}
 		}
@@ -1062,7 +1077,7 @@ function display_tasks()
 	echo '
 	    <div class="container100">
 		<table class="std">
-	        <tr><th class="std">#</th><th class="std">MD5</th><th class="std">ANALYSES</th><th class="std">SOURCES</th><th class="std">VIEW TASK</th></tr>';
+	        <tr><th class="std">#</th><th class="std">MD5</th><th class="std">ANALYSES :: SCORE</th><th class="std">SOURCES</th><th class="std">VIEW TASK</th></tr>';
 
 	while ($res = $req->fetchArray()) 
 	{
@@ -1082,11 +1097,11 @@ function display_tasks()
 		$metadata_matches = get_task_metadata($res["task_id"]);
 		$counts = Array();
 		$signs = Array();
-		for($meta = $metadata_matches->fetchArray())
+		while($meta = $metadata_matches->fetchArray())
 		{
-			$source_info = get_source_info($meta["source_type"],$meta["source_id"]);
+			$source_info = get_source_info($meta["source_type"],$meta["source_id"],TRUE);
 			if(in_array($source_info,$signs))
-				$counts[$array_search($source_info,$signs)]++;
+				$counts[array_search($source_info,$signs)]++;
 			else
 			{
 				$counts[] = 1;
@@ -1095,7 +1110,11 @@ function display_tasks()
 		}
 		$source_data = '';
 		for($i = 0; $i<count($counts); $i++)
+		{
+			if($signs[$i]!='MANUAL' && $counts[$i]!=1)
+				$counts[$i]--;
 			$source_data .= $signs[$i].' ('.$counts[$i].')<br />';
+		}
 		echo '
 	        <tr onclick="document.location.href=\''.$_SERVER['PHP_SELF'].'?display_task='.$res["task_id"].'\'"><td>'.$res['task_id'].'</td><td>'.$res['md5'].$alerts_msg.'</td><td>';
 		display_task_analyses_short($res["task_id"]);
