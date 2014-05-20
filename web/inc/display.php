@@ -1062,7 +1062,7 @@ function display_tasks()
 	echo '
 	    <div class="container100">
 		<table class="std">
-	        <tr><th class="std">#</th><th class="std">MD5</th><th class="std">ANALYSES</th><th class="std">VIEW TASK</th></tr>';
+	        <tr><th class="std">#</th><th class="std">MD5</th><th class="std">ANALYSES</th><th class="std">SOURCES</th><th class="std">VIEW TASK</th></tr>';
 
 	while ($res = $req->fetchArray()) 
 	{
@@ -1078,10 +1078,30 @@ function display_tasks()
 			
 			$alerts_msg.='<br /><span style="color:'.$criticity.'">'.secure_display($alert['label']).': '.secure_display($alert['description']).'</span>';
 		}
+
+		$metadata_matches = get_task_metadata($res["task_id"]);
+		$counts = Array();
+		$signs = Array();
+		for($meta = $metadata_matches->fetchArray())
+		{
+			$source_info = get_source_info($meta["source_type"],$meta["source_id"]);
+			if(in_array($source_info,$signs))
+				$counts[$array_search($source_info,$signs)]++;
+			else
+			{
+				$counts[] = 1;
+				$signs[] = $source_info;
+			}
+		}
+		$source_data = '';
+		for($i = 0; $i<count($counts); $i++)
+			$source_data .= $signs[$i].' ('.$counts[$i].')<br />';
 		echo '
 	        <tr onclick="document.location.href=\''.$_SERVER['PHP_SELF'].'?display_task='.$res["task_id"].'\'"><td>'.$res['task_id'].'</td><td>'.$res['md5'].$alerts_msg.'</td><td>';
 		display_task_analyses_short($res["task_id"]);
-		echo '</td><td><a href="'.$_SERVER['PHP_SELF'].'?display_task='.$res["task_id"].'" style="color:blue;">display info</a></td></tr>';
+		echo '</td><td>'.$source_data.'</td><td><a href="'.$_SERVER['PHP_SELF'].'?display_task='.$res["task_id"].'" style="color:blue;">display info</a></td></tr>';
+		
+	
 	}
 	echo '
                 </table>
