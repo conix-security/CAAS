@@ -1064,8 +1064,20 @@ function display_tasks()
 
 	while ($res = $req->fetchArray()) 
 	{
+		$alerts_msg = "";
+		$alerts = get_task_alerts($res["task_id"]);
+		while($alert = $alerts->fetchArray())
+		{
+			$criticity = 'green';
+			if($alert['criticity'] == 2)
+				$criticity = 'orange';
+	                elseif($alert['criticity'] == 1)
+	                        $criticity = 'red';
+			
+			$alerts_msg.='<br /><span style="color:'.$criticity.'">'.secure_display($alert['label']).': '.secure_display($alert['description']).'</span>';
+		}
 		echo '
-	        <tr onclick="document.location.href=\''.$_SERVER['PHP_SELF'].'?display_task='.$res["task_id"].'\'"><td>'.$res['task_id'].'</td><td>'.$res['md5'].'</td><td>';
+	        <tr onclick="document.location.href=\''.$_SERVER['PHP_SELF'].'?display_task='.$res["task_id"].'\'"><td>'.$res['task_id'].'</td><td>'.$res['md5'].$alerts_msg.'</td><td>';
 		display_task_analyses_short($res["task_id"]);
 		echo '</td><td><a href="'.$_SERVER['PHP_SELF'].'?display_task='.$res["task_id"].'" style="color:blue;">display info</a></td></tr>';
 	}
