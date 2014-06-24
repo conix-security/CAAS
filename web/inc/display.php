@@ -570,7 +570,61 @@ function display_config()
 	$form_e = '<a href="'.$_SERVER['PHP_SELF'].'?config&edit_main">EDIT</a>';
 	if(!isset($_GET["edit_main"]))
 	{
-			$usermode = "Disabled";
+		if(isset($_POST["main_modif"])
+			&& isset($_POST['enable_user'])
+			&& isset($_POST['autodl'])
+			&& isset($_POST['enable_krnel'])
+			&& isset($_POST['parse_meta'])
+			&& isset($_POST['krnl_timeout'])
+			&& isset($_POST['krnl_warn_limit'])
+			&& isset($_POST['krnl_alert_limit'])
+			&& isset($_POST['user_timeout'])
+			&& isset($_POST['user_alert_limit'])
+			&& isset($_POST['user_warn_limit'])
+		)
+		{
+			if($_POST['enable_user'] == "enabled")
+				$enable_usermode_analysis_p = 1;
+			elseif($_POST['enable_user'] == "disabled")
+				$enable_usermode_analysis_p = 0;
+			else
+				$enable_usermode_analysis_p = "ERROR";
+
+			if($_POST['autodl'] == "enabled")
+				$autodownload_reports_p = 1;
+			elseif($_POST['autodl'] == "disabled")
+				$autodownload_reports_p = 0;
+			else
+				$autodownload_reports_p = "ERROR";
+
+			if($_POST['enable_krnel'] == "enabled")
+				$enable_kernelmode_analysis_p = 1;
+			elseif($_POST['enable_krnel'] == "disabled")
+				$enable_kernelmode_analysis_p = 0;
+			else
+				$enable_kernelmode_analysis_p = "ERROR";
+
+			if($_POST['parse_meta'] == "enabled")
+				$parse_metadata_p = 1;
+			elseif($_POST['parse_meta'] == "disabled")
+				$parse_metadata_p = 0;
+			else
+				$parse_metadata_p = "ERROR";
+			update_main_config(
+				$parse_metadata_p,
+				$autodownload_reports_p,
+				$_POST['krnl_warn_limit'],
+				$_POST['krnl_alert_limit'],
+				$_POST['user_warn_limit'],
+				$_POST['user_alert_limit'],
+				$enable_usermode_analysis_p,
+				$enable_kernelmode_analysis_p,
+				$_POST['user_timeout'],
+				$_POST['krnl_timeout'],
+				$sampling);
+		}
+
+		$usermode = "Disabled";
 		if($enable_usermode_analysis == 1)
 			$usermode = "Enabled";
 		$usermode .= ", ".$usermode_timeout.' seconds timeout (scoring rules: <span style="color:orange">'.$usermode_score_medium.'</span> / <span style="color:red;">'.$usermode_score_high."</span>)";
@@ -602,7 +656,7 @@ function display_config()
 			$krnlmode = '<select name="enable_krnel"><option value="disabled">Disabled</option><option value="enabled">Enabled</option></select>';
 		else
 			$krnlmode = '<select name="enable_krnel"><option value="enabled">Enabled</option><option value="disabled">Disabled</option></select>';
-		$krnlmode.= '<input type="text" size="1" name="user_timeout" value="'.$kernelmode_timeout.'" />s timeout (<input type="text" size="2" name="user_warn_limit" style="color:orange" value="'.$kernelmode_score_medium.'" /> / <input type="text" size="2" name="user_alert_limit" style="color:red;" value="'.$kernelmode_score_high.'"/>)';
+		$krnlmode.= '<input type="text" size="1" name="krnl_timeout" value="'.$kernelmode_timeout.'" />s timeout (<input type="text" size="2" name="krnl_warn_limit" style="color:orange" value="'.$kernelmode_score_medium.'" /> / <input type="text" size="2" name="krnl_alert_limit" style="color:red;" value="'.$kernelmode_score_high.'"/>)';
 		if(!$parse_metadata)
 			$meta = '<select name="parse_meta"><option value="disabled">Disabled</option><option value="enabled">Enabled</option></select>';
 		else

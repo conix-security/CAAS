@@ -115,6 +115,57 @@ function init_config()
 	}
 	
 }
+function update_main_config($parse_metadata_p,$autodownload_reports_p,$kernelmode_score_medium_p,$kernelmode_score_high_p,$usermode_score_medium_p,$usermode_score_high_p,$enable_usermode_analysis_p,$enable_kernelmode_analysis_p,$usermode_timeout_p,$kernelmode_timeout_p,$sampling_p = 100)
+{
+	global $db_handler;
+	global $parse_metadata,$autodownload_reports,$kernelmode_score_medium,$kernelmode_score_high,$usermode_score_medium,$usermode_score_high,$enable_usermode_analysis,$enable_kernelmode_analysis,$usermode_timeout,$kernelmode_timeout,$sampling;
+	
+	if(!is_numeric($sampling_p) ||
+		!is_numeric($kernelmode_score_medium_p) ||
+		!is_numeric($kernelmode_score_high_p) ||
+		!is_numeric($usermode_score_medium_p) ||
+		!is_numeric($usermode_score_high_p) ||
+		!is_numeric($kernelmode_timeout_p) ||
+		!is_numeric($usermode_timeout_p) ||
+		($autodownload_reports_p != 0 && $autodownload_reports_p != 1) ||
+		($parse_metadata_p != 0 && $parse_metadata_p != 1) ||
+		($enable_usermode_analysis_p != 0 && $enable_usermode_analysis_p != 1) ||
+		($enable_kernelmode_analysis_p != 0 && $enable_kernelmode_analysis_p != 1)
+	)
+	{
+		error('[update_main_config] Not numeric parameter','SECURITY');
+	}
+	
+	$parse_metadata = intval($parse_metadata_p);
+	$autodownload_reports = intval($autodownload_reports_p);
+	$kernelmode_score_medium = intval($kernelmode_score_medium_p);
+	$kernelmode_score_high = intval($kernelmode_score_high_p);
+	$usermode_score_medium = intval($usermode_score_medium_p);
+	$usermode_score_high = intval($usermode_score_high_p);
+	$enable_usermode_analysis = intval($enable_usermode_analysis_p);
+	$enable_kernelmode_analysis = intval($enable_kernelmode_analysis_p);
+	$usermode_timeout = intval($usermode_timeout_p);
+	$kernelmode_timeout = intval($kernelmode_timeout_p);
+	$sampling = intval($sampling_p);
+
+	$request = "UPDATE configuration SET
+		parse_metadata = '$parse_metadata',
+		auto_download_reports = '$autodownload_reports',
+		kernelmode_score_medium = '$kernelmode_score_medium',
+		kernelmode_score_high = '$kernelmode_score_high',
+		usermode_score_medium = '$usermode_score_medium',
+		usermode_score_high = '$usermode_score_high',
+		enable_usermode_analysis = '$enable_usermode_analysis',
+		enable_kernelmode_analysis = '$enable_kernelmode_analysis',
+		usermode_timeout = '$usermode_timeout',
+		kernelmode_timeout = '$kernelmode_timeout',
+		sampling = '$sampling'";
+
+	get_write_db();
+	query_db($request);
+	drop_write_db();
+
+}
 function init_db()
 {
 	open_db();
