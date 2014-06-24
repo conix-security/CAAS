@@ -115,6 +115,101 @@ function init_config()
 	}
 	
 }
+function enable_local_source($id)
+{
+	global $db_handler;
+	if(!is_numeric($id))
+		error('[enable_local_source] Not numeric parameter','SECURITY');
+	$id_s = intval($id);
+	$request = "UPDATE local_source set is_active = '1' where local_source_id = '".$id_s."'";
+	get_write_db();
+	query_db($request);
+	drop_write_db();
+}
+function disable_local_source($id)
+{
+	global $db_handler;
+	if(!is_numeric($id))
+		error('[disable_local_source] Not numeric parameter','SECURITY');
+	$id_s = intval($id);
+	$request = "UPDATE local_source set is_active = '0' where local_source_id = '".$id_s."'";
+	get_write_db();
+	query_db($request);
+	drop_write_db();
+}
+function create_local_source($folder)
+{
+	global $db_handler;
+
+	$folder_s = secure_sql($folder);
+	if(!is_dir($folder_s))
+	{
+		error('[enable_local_source] Folder does not exists','ERROR');
+		return 0;
+	}
+	$request = "INSERT INTO local_source(lookup_folder,is_active) VALUES('".$folder_s."','0');";
+	get_write_db();
+	query_db($request);
+	drop_write_db();
+}
+function enable_cuckoo_server($id)
+{
+	global $db_handler;
+	if(!is_numeric($id))
+		error('[enable_cuckoo_server] Not numeric parameter','SECURITY');
+	$id_s = intval($id);
+	$request = "UPDATE cuckoo_server set is_active = '1' where cuckoo_server_id = '".$id_s."'";
+	get_write_db();
+	query_db($request);
+	drop_write_db();
+}
+function disable_cuckoo_server($id)
+{
+	global $db_handler;
+	if(!is_numeric($id))
+		error('[disable_cuckoo_server] Not numeric parameter','SECURITY');
+	$id_s = intval($id);
+	$request = "UPDATE cuckoo_server set is_active = '0' where cuckoo_server_id = '".$id_s."'";
+	get_write_db();
+	query_db($request);
+	drop_write_db();
+}
+function enable_remote_source($id)
+{
+	global $db_handler;
+	if(!is_numeric($id))
+		error('[enable_remote_source] Not numeric parameter','SECURITY');
+	$id_s = intval($id);
+	$request = "UPDATE remote_source set is_active = '1' where remote_source_id = '".$id_s."'";
+	get_write_db();
+	query_db($request);
+	drop_write_db();
+}
+function disable_remote_source($id)
+{
+	global $db_handler;
+	if(!is_numeric($id))
+		error('[disable_remote_source] Not numeric parameter','SECURITY');
+	$id_s = intval($id);
+	$request = "UPDATE remote_source set is_active = '0' where remote_source_id = '".$id_s."'";
+	get_write_db();
+	query_db($request);
+	drop_write_db();
+}
+function create_remote_source($ip_addr)
+{
+	global $db_handler;
+	$ip_addr_s =  secure_sql(filter_var($ip_addr, FILTER_VALIDATE_IP));
+	if(!$ip_addr)
+	{
+		error('[enable_remote_source] Not numeric parameter','ERROR');
+		return 0;
+	}
+	$request = "INSERT INTO remote_source(remote_ip_addr,is_active) VALUES('".$ip_addr_s."','0');";
+	get_write_db();
+	query_db($request);
+	drop_write_db();
+}
 function update_main_config($parse_metadata_p,$autodownload_reports_p,$kernelmode_score_medium_p,$kernelmode_score_high_p,$usermode_score_medium_p,$usermode_score_high_p,$enable_usermode_analysis_p,$enable_kernelmode_analysis_p,$usermode_timeout_p,$kernelmode_timeout_p,$sampling_p = 100)
 {
 	global $db_handler;

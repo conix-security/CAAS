@@ -563,6 +563,83 @@ function display_analysis($analysis_id,$display_json=False)
 function display_config()
 {
 	global $enable_usermode_analysis,$enable_kernelmode_analysis,$parse_metadata,$autodownload_reports,$kernelmode_score_medium,$kernelmode_score_high,$usermode_score_medium,$usermode_score_high,$kernelmode_timeout,$usermode_timeout,$sampling;
+	if(isset($_GET['enable_local_source']) ||
+		isset($_GET['disable_local_source']) ||
+		isset($_GET['disable_remote_source']) ||
+		isset($_GET['enable_remote_source']) ||
+		isset($_GET['disable_cuckoo_server']) ||
+		isset($_GET['enable_cuckoo_server']))
+		if(!check_csrf(TRUE))
+			error('[display_config] CSRF ATTEMPT','SECURITY');
+	if(isset($_POST['add_local_source']) && isset($_POST['lookup_folder']))
+		create_local_source($_POST['lookup_folder']);
+	if(isset($_POST['add_remote_source']) && isset($_POST['remote_ip_addr']))
+		create_remote_source($_POST['remote_ip_addr']);
+	if(isset($_GET['enable_remote_source']))
+		enable_remote_source($_GET['enable_remote_source']);
+	if(isset($_GET['disable_remote_source']))
+		disable_remote_source($_GET['disable_remote_source']);
+	if(isset($_GET['enable_local_source']))
+		enable_local_source($_GET['enable_local_source']);
+	if(isset($_GET['disable_local_source']))
+		disable_local_source($_GET['disable_local_source']);
+	if(isset($_GET['enable_cuckoo_server']))
+		enable_cuckoo_server($_GET['enable_cuckoo_server']);
+	if(isset($_GET['disable_cuckoo_server']))
+		disable_cuckoo_server($_GET['disable_cuckoo_server']);
+	if(isset($_POST["main_modif"])
+		&& isset($_POST['enable_user'])
+		&& isset($_POST['autodl'])
+		&& isset($_POST['enable_krnel'])
+		&& isset($_POST['parse_meta'])
+		&& isset($_POST['krnl_timeout'])
+		&& isset($_POST['krnl_warn_limit'])
+		&& isset($_POST['krnl_alert_limit'])
+		&& isset($_POST['user_timeout'])
+		&& isset($_POST['user_alert_limit'])
+		&& isset($_POST['user_warn_limit'])
+	)
+	{
+		if($_POST['enable_user'] == "enabled")
+			$enable_usermode_analysis_p = 1;
+		elseif($_POST['enable_user'] == "disabled")
+			$enable_usermode_analysis_p = 0;
+		else
+			$enable_usermode_analysis_p = "ERROR";
+		
+		if($_POST['autodl'] == "enabled")
+			$autodownload_reports_p = 1;
+		elseif($_POST['autodl'] == "disabled")
+			$autodownload_reports_p = 0;
+		else
+			$autodownload_reports_p = "ERROR";
+			
+		if($_POST['enable_krnel'] == "enabled")
+			$enable_kernelmode_analysis_p = 1;
+		elseif($_POST['enable_krnel'] == "disabled")
+			$enable_kernelmode_analysis_p = 0;
+		else
+			$enable_kernelmode_analysis_p = "ERROR";
+			
+		if($_POST['parse_meta'] == "enabled")
+			$parse_metadata_p = 1;
+		elseif($_POST['parse_meta'] == "disabled")
+			$parse_metadata_p = 0;
+		else
+			$parse_metadata_p = "ERROR";
+		update_main_config(
+			$parse_metadata_p,
+			$autodownload_reports_p,
+			$_POST['krnl_warn_limit'],
+			$_POST['krnl_alert_limit'],
+			$_POST['user_warn_limit'],
+			$_POST['user_alert_limit'],
+			$enable_usermode_analysis_p,
+			$enable_kernelmode_analysis_p,
+			$_POST['user_timeout'],
+			$_POST['krnl_timeout'],
+			$sampling);
+	}
 	echo '
 	<h1>CONFIGURATION</h1>
         <h2 style="color:red;">NOT FUNCTIONAL</h2>';
@@ -570,60 +647,6 @@ function display_config()
 	$form_e = '<a href="'.$_SERVER['PHP_SELF'].'?config&edit_main">EDIT</a>';
 	if(!isset($_GET["edit_main"]))
 	{
-		if(isset($_POST["main_modif"])
-			&& isset($_POST['enable_user'])
-			&& isset($_POST['autodl'])
-			&& isset($_POST['enable_krnel'])
-			&& isset($_POST['parse_meta'])
-			&& isset($_POST['krnl_timeout'])
-			&& isset($_POST['krnl_warn_limit'])
-			&& isset($_POST['krnl_alert_limit'])
-			&& isset($_POST['user_timeout'])
-			&& isset($_POST['user_alert_limit'])
-			&& isset($_POST['user_warn_limit'])
-		)
-		{
-			if($_POST['enable_user'] == "enabled")
-				$enable_usermode_analysis_p = 1;
-			elseif($_POST['enable_user'] == "disabled")
-				$enable_usermode_analysis_p = 0;
-			else
-				$enable_usermode_analysis_p = "ERROR";
-
-			if($_POST['autodl'] == "enabled")
-				$autodownload_reports_p = 1;
-			elseif($_POST['autodl'] == "disabled")
-				$autodownload_reports_p = 0;
-			else
-				$autodownload_reports_p = "ERROR";
-
-			if($_POST['enable_krnel'] == "enabled")
-				$enable_kernelmode_analysis_p = 1;
-			elseif($_POST['enable_krnel'] == "disabled")
-				$enable_kernelmode_analysis_p = 0;
-			else
-				$enable_kernelmode_analysis_p = "ERROR";
-
-			if($_POST['parse_meta'] == "enabled")
-				$parse_metadata_p = 1;
-			elseif($_POST['parse_meta'] == "disabled")
-				$parse_metadata_p = 0;
-			else
-				$parse_metadata_p = "ERROR";
-			update_main_config(
-				$parse_metadata_p,
-				$autodownload_reports_p,
-				$_POST['krnl_warn_limit'],
-				$_POST['krnl_alert_limit'],
-				$_POST['user_warn_limit'],
-				$_POST['user_alert_limit'],
-				$enable_usermode_analysis_p,
-				$enable_kernelmode_analysis_p,
-				$_POST['user_timeout'],
-				$_POST['krnl_timeout'],
-				$sampling);
-		}
-
 		$usermode = "Disabled";
 		if($enable_usermode_analysis == 1)
 			$usermode = "Enabled";
@@ -688,9 +711,9 @@ function display_config()
 			$active = "Yes";
 			$link = "disable";
 		}
-		echo '<tr><td>'.secure_display($res["server_addr"]).':'.secure_display($res["ssh_port"]).'</td><td>'.secure_display($res["username"]).'</td><td>'.secure_display($res["cuckoo_path"]).'</td><td>'.$active.'</td><td><a href="'.$_SERVER["PHP_SELF"].'?config&'.$link.'_cuckoo_server='.secure_display($res["cuckoo_server_id"]).'">'.$link.'</a></td></tr>';
+		echo '<tr><td>'.secure_display($res["server_addr"]).':'.secure_display($res["ssh_port"]).'</td><td>'.secure_display($res["username"]).'</td><td>'.secure_display($res["cuckoo_path"]).'</td><td>'.$active.'</td><td><a href="'.$_SERVER["PHP_SELF"].'?config&'.$link.'_cuckoo_server='.secure_display($res["cuckoo_server_id"]).'&crt='.gen_csrf(TRUE).'">'.$link.'</a></td></tr>';
 	}	
-	echo '<form action="'.$_SERVER['PHP_SELF'].'?config" method="POST">'.gen_csrf().'<tr><td><input type="text" name="ip_addr" size="11" />:<input type="text" name="port" size="4" /></td><td><input type="text" name="username" value="username" size="7"/>:<input type="password" name="pass" value="********************" /></td><td><input type="text" name="path" value="/path/to/cuckoo" /></td><td colspan="2"><input type="submit" name="add_cuckoo_server" value="Add" /></td></tr></form>
+	echo 'Remote servers must be added using the commandline tool, in the CAAS directory.
 	</table></div>
 	<h2>Local sources</h2>
 	<div class="container100"><table class="std">
@@ -705,7 +728,7 @@ function display_config()
 			$active = "Yes";
 			$link = "disable";
 		}
-		echo '<tr><td>'.secure_display($res["lookup_folder"]).'</td><td>'.$active.'</td><td><a href="'.$_SERVER["PHP_SELF"].'?config&'.$link.'_cuckoo_server='.secure_display($res["local_source_id"]).'">'.$link.'</a></td></tr>';
+		echo '<tr><td>'.secure_display($res["lookup_folder"]).'</td><td>'.$active.'</td><td><a href="'.$_SERVER["PHP_SELF"].'?config&'.$link.'_local_source='.secure_display($res["local_source_id"]).'&crt='.gen_csrf(TRUE).'">'.$link.'</a></td></tr>';
 	}	
 	echo '<form action="'.$_SERVER['PHP_SELF'].'?config" method="POST">'.gen_csrf().'<tr><td><input type="text" name="lookup_folder" size="11" value="/lookup/folder" /></td><td colspan="2"><input type="submit" name="add_local_source" value="Add" /></td></tr></form>
 	</table></div>
@@ -722,7 +745,7 @@ function display_config()
 			$active = "Yes";
 			$link = "disable";
 		}
-		echo '<tr><td>'.secure_display($res["remote_ip_addr"]).'</td><td>'.$active.'</td><td><a href="'.$_SERVER["PHP_SELF"].'?config&'.$link.'_cuckoo_server='.secure_display($res["remote_source_id"]).'">'.$link.'</a></td></tr>';
+		echo '<tr><td>'.secure_display($res["remote_ip_addr"]).'</td><td>'.$active.'</td><td><a href="'.$_SERVER["PHP_SELF"].'?config&'.$link.'_remote_source='.secure_display($res["remote_source_id"]).'&crt='.gen_csrf(TRUE).'">'.$link.'</a></td></tr>';
 	}	
 	echo '<form action="'.$_SERVER['PHP_SELF'].'?config" method="POST">'.gen_csrf().'<tr><td><input type="text" name="remote_ip_addr" size="11" /></td><td colspan="2"><input type="submit" name="add_remote_source" value="Add" /></td></tr></form>
 	</table></div>';

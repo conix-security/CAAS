@@ -91,12 +91,12 @@ class local_service:
     #   - monitor for new files in submit folder
     def run(self):
         self.init()
-        folders = self.db_client.get_active_local_sources()
-        for folder_info in folders:
-            if not os.path.exists(folder_info[1]):
-                log.critical(folder_info[1] + " does not exist.")
         log.info("Local service is running!")
         while True:
+            folders = self.db_client.get_active_local_sources()
+            for folder_info in folders:
+                if not os.path.exists(folder_info[1]):
+                    log.critical(folder_info[1] + " does not exist.")
             for folder_info in folders:
                 for file_name in os.listdir(folder_info[1]):
                     basename = os.path.join(folder_info[1], file_name)
@@ -104,4 +104,5 @@ class local_service:
                         if basename[-5:] == ".meta":
                             continue
                     handle_new_file(self.db_client, basename, True, 1, folder_info[0])
-            time.sleep(5)
+                time.sleep(5)
+

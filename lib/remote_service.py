@@ -459,6 +459,7 @@ class remote_service:
         while True:
             connection, addr = self.s.accept()
             auth = 0
+            self.remote_sources = db_client.get_active_remote_sources()
             for src in self.remote_sources:
                 if src[1] == addr[0]:
                     newThread = service_thread(addr[0],addr[1],connection,src[0])
