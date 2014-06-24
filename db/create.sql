@@ -14,7 +14,6 @@ CREATE TABLE analysis (analysis_id INTEGER PRIMARY KEY AUTOINCREMENT, cuckoo_id 
 CREATE TABLE signature (signature_id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, score INTEGER DEFAULT 0, analysis_id INTEGER);
 CREATE TABLE task (task_id INTEGER PRIMARY KEY AUTOINCREMENT, md5 TEXT);
 CREATE TABLE cuckoo_server (cuckoo_server_id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, server_addr TEXT, ssh_port INTEGER, username TEXT, password TEXT, cuckoo_path TEXT, vms_count INTEGER DEFAULT 0, is_active INTEGER DEFAULT 0);
-CREATE TABLE metadata_old (meta_id INTEGER PRIMARY KEY AUTOINCREMENT, time TEXT, src_ip TEXT, dst_ip TEXT, proto TEXT, src_port TEXT, dst_port TEXT, uri TEXT, filename TEXT, magic TEXT, task_id INTEGER, source_type INTEGER, source_id INTEGER, host TEXT, referer TEXT, user_agent TEXT, sz INTEGER);
 CREATE TABLE submition (submition_id INTEGER PRIMARY KEY AUTOINCREMENT, time TEXT, source_type INTEGER, source_id INTEGER, task_id INTEGER);
 CREATE TABLE metadata (metadata_id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, value TEXT, submition_id INTEGER);
 CREATE TABLE source_types(source_type_id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT);
