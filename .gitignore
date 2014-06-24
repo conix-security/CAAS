@@ -5,3 +5,6 @@
 /log/*
 /results
 /results/*
+*.swp
+*~
+*.swo
