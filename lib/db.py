@@ -507,53 +507,65 @@ class db:
     
     # print task metadata information
     def print_task_metadata(self, task_id):
-        request = "SELECT time, src_ip, src_port, dst_ip, dst_port, uri, filename, magic FROM metadata WHERE task_id = ?"
+        request = "SELECT submition_id, time, source_type, source_id, task_id FROM submition WHERE task_id = ?"
         try:
             self.cursor.execute(request,[int(task_id)])
             results = self.cursor.fetchall()
         except sqlite3.Error, e:
-            log.error("Cannot find task <"+str(task_id)+">")
+            log.error("Cannot find submitions from task <"+str(task_id)+">")
             log.debug("SQLITE exception: %s" % e)
             return 0
+        
         if len(results) == 0:
             return 1
         for data in results:
-            print "\tMetadata information:"
-            if data[0] != "":
-                print "\t\tTime: "+data[0]
-            if data[1] != "":
-                print "\t\tSRC IP: "+data[1]
-            if data[2] != "":
-                print "\t\tSRC PORT: "+data[2]
-            if data[3] != "":
-                print "\t\tDST IP: "+data[3]
-            if data[4] != "":
-                print "\t\tDST PORT: "+data[4]
-            if data[5] != "":
-                print "\t\tDOWNLOAD URI: "+data[5]
-            if data[6] != "":
-                print "\t\tFILENAME: "+data[6]
-            if data[7] != "":
-                print "\t\tMAGIC: "+data[7]
+            print "Submition <"+str(data[0])+"> ("+str(data[1])+")" 
+            request2 = "SELECT metadata_id, name, value, submition_id FROM metadata WHERE submition_id = ?"
+            try:
+                self.cursor.execute(request2,[int(data[0])])
+                results_meta = self.cursor.fetchall()
+            except sqlite3.Error, e:
+                log.error("Cannot list metadata of submition <"+str(data[0])+">")
+                log.debug("SQLITE exception: %s" % e)
+                return 0
+            
+            for meta_info in results_meta:
+                print "\t\t"+str(meta_info[1])+": "+str(meta_info[2])
         return 1
-    
-    # add meta information to an existing task
-    def add_meta_info(self, task_id, time="", src_ip="", dst_ip="", proto="", src_port="", dst_port="", uri="", filename="", magic="", source_type=0, source_id=0, host="", referer="", user_agent="", size=0):
-        request = "INSERT INTO metadata(task_id,time,src_ip,dst_ip,src_port,dst_port,uri,filename,magic,source_type,source_id,proto,host,referer,user_agent,sz) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+   
+    # submition info
+    def add_submition(self, time, source_type, source_id, task_id):
+        request = "INSERT INTO submition(time, source_type, source_id, task_id) VALUES(?,?,?,?)"
         try:
-            self.cursor.execute(request,[task_id,time,src_ip,dst_ip,src_port,dst_port,uri,filename,magic,source_type,source_id,proto,host,referer,user_agent,size])
+            self.cursor.execute(request,time,source_type,source_id,task_id)
             self.connection.commit()
         except sqlite3.Error, e:
             if self.connection:
                 self.connection.rollback()
-            log.error("Cannot add task meta information")
+            log.error("Cannot add task submition")
             log.debug("SQLITE exception: %s" % e)
             return 0
         return 1
 
+    # metadata
+    def add_metadata_to_submition(self, submition_id, command, data):
+        request = "INSERT INTO metadata(name,value,submition_id) VALUES(?,?,?)"
+        try:
+            self.cursor.execute(request,command,data,submition_id)
+            self.connection.commit()
+        except sqlite3.Error, e:
+            if self.connection:
+                self.connection.rollback()
+            log.error("Cannot add metadata")
+            log.debug("SQLITE exception: %s" % e)
+            return 0
+        return 1
+
+
+
     ################################
     # Tasks
-    ################################
+    ########################metadataprint all tasks information
     
     # print all tasks information
     def print_all_tasks(self):

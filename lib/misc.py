@@ -279,7 +279,7 @@ def handle_new_file(db_client,file_path,check_type,source_type,source_id):
         if parse_metadata == 1:
             meta_path = file_path+".meta"
             if os.path.exists(meta_path):
-                add_suricata_metadata_to_task(db_client, meta_path, task_id, source_type, source_id)
+                add_metadata_to_task(db_client, meta_path, task_id, source_type, source_id)
             else:
                 db_client.add_meta_info(task_id,  time=time.time(), source_type=source_type, source_id=source_id)
         else:
@@ -291,11 +291,11 @@ def handle_new_file(db_client,file_path,check_type,source_type,source_id):
             log.info("Adding metadata to existing task...")
             meta_path = file_path+".meta"
             if os.path.exists(meta_path):
-                add_suricata_metadata_to_task(db_client, meta_path, tid, source_type, source_id)
+                add_metadata_to_task(db_client, meta_path, tid, source_type, source_id)
             else:
-                db_client.add_meta_info(tid,  time=time.time(), source_type=source_type, source_id=source_id)
+                add_submition_to_task(db_client, tid, time=time.time(), source_type=source_type, source_id=source_id)
         else:
-            db_client.add_meta_info(tid,  time=time.time(), source_type=source_type, source_id=source_id)
+            add_submition_to_task(db_client, tid, time=time.time(), source_type=source_type, source_id=source_id)
     
     #os.remove(file_path)
     if parse_metadata == 1:
@@ -304,69 +304,37 @@ def handle_new_file(db_client,file_path,check_type,source_type,source_id):
             os.remove(meta_path)
     return 1
 
-
+# adds a submition entry to a specific task
+def add_submition_to_task(db_client, task_id, time, source_type, source_id):
+    submition_id = db_client.add_submition(time, source_type, source_id, task_id)
+    return submition_id
 
 
 # parses suricata metadata and adds to task
-#   - suricata metadata lines follow this scheme: KEYWORD: description
+#   - metadata lines follow this scheme: KEYWORD: description
 #   - only parses several key words
-def add_suricata_metadata_to_task(db_client, metadata_path, task_id, source_type, source_id):
+def add_metadata_to_task(db_client, metadata_path, task_id, source_type, source_id):
     if not os.path.exists(metadata_path):
         log.error(metadata_path+" meta file does not exist")
         return 0
     
+    submition_id = db_client.add_submition(time.time(), source_type, source_id, task_id)
+    if submition_id == 0:
+        return 0
+
     fhandle = open(metadata_path, "r")
     fdata = fhandle.read()
     fhandle.close()
 
-    time = ""
-    proto = ""
-    src_ip = ""
-    dst_ip = ""
-    src_port = ""
-    dst_port = ""
-    uri = ""
-    filename = ""
-    magic = ""
-    proto = 0
-    host = ""
-    referer = ""
-    user_agent = ""
-    sz = 0
     lines = fdata.split("\n")
     for line in lines:
         words = line.split(":",1)
         if len(words) >= 2:
             command = words[0].strip()
             data = words[1].strip()
-            if command == "TIME":
-                time = data
-            elif command == "SRC IP":
-                src_ip = data
-            elif command == "DST IP":
-                dst_ip = data
-            elif command == "PROTO":
-                proto = data
-            elif command == "SRC PORT":
-                src_port = data
-            elif command == "DST PORT":
-                dst_port = data
-            elif command == "HTTP URI":
-                uri = data
-            elif command == "FILENAME":
-                filename = data
-            elif command == "MAGIC":
-                magic = data
-            elif command == "HTTP HOST":
-                host = data
-            elif command == "HTTP REFERER":
-                referer = data
-            elif command == "HTTP USER AGENT":
-                user_agent = data
-            elif command == "SIZE":
-                sz = data
+            db_client.add_metadata_to_submition(submition_id, command, data)
     
-    return db_client.add_meta_info(task_id, time, src_ip, dst_ip, proto, src_port, dst_port, uri, filename, magic, source_type, source_id, host, referer, user_agent, sz) 
+    return 1
 
 
 

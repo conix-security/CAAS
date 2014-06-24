@@ -254,7 +254,7 @@ function display_metadata($task_id,$display_header)
 	global $metadata_footer,$metadata_header_1,$metadata_header_2;
 	$task_id_s = secure_display($task_id);
 	
-	$req = get_task_metadata($task_id);
+	$req = get_task_submitions($task_id);
 	if(!$req)
 		return;
 	while($line = $req->fetchArray())
@@ -262,41 +262,18 @@ function display_metadata($task_id,$display_header)
 		echo '
 <div class="container100"><table class="std">
 	<tr><th class="std">TIME</th><td class="std">'.secure_display($line['time']).'</td></tr>';
-	if($line['src_ip']!='')
+		
+		
+		$req2 = get_submition_metadata($line['submition_id']);
+		if($req2)
+		{
+			while($meta = $req2->fetchArray())
+				echo '<tr><th class="std">'.secure_display($meta['name']).'</th><td class="std">'.secure_display($meta['value']).'</td></tr>';
+		}	
+		$source_data = get_source_info($line['source_type'],$line['source_id']);
 		echo '
-	<tr><th class="std">SRC ip:port</th><td class="std">'.secure_display($line['src_ip']).':'.secure_display($line['src_port']).'</td></tr>';
-	if($line['dst_ip']!='')
+		<tr><th class="std">SOURCE</th><td class="std">'.$source_data.'</td></tr>';
 		echo '
-	<tr><th class="std">DST ip:port</th><td class="std">'.secure_display($line['dst_ip']).':'.secure_display($line['dst_port']).'</td></tr>';
-	if($line['host']!='')
-		echo '
-	<tr><th class="std">HOST</th><td class="std">'.secure_display($line['host']).'</td></tr>';
-	if($line['uri']!='')
-		echo '
-	<tr><th class="std">DOWNLOAD URI</th><td class="std">'.secure_display($line['uri']).'</td></tr>';
-	if($line['filename']!='')
-		echo '
-	<tr><th class="std">FILENAME</th><td class="std">'.secure_display($line['filename']).'</td></tr>';
-	if($line['referer']!='')
-		echo '
-	<tr><th class="std">REFERER</th><td class="std">'.secure_display($line['referer']).'</td></tr>';
-	if($line['user_agent']!='')
-		echo '
-	<tr><th class="std">USER AGENT</th><td class="std">'.secure_display($line['user_agent']).'</td></tr>';
-	if($line['proto']!=0)
-		echo '
-	<tr><th class="std">PROTOCOL</th><td class="std">'.secure_display($line['proto']).'</td></tr>';
-	if($line['magic']!='')
-		echo '
-	<tr><th class="std">SURICATA MAGIC</th><td class="std">'.secure_display($line['magic']).'</td></tr>';
-	if($line['sz']!=0)
-		echo '
-	<tr><th class="std">SIZE</th><td class="std">'.secure_display($line['sz']).'bytes</td></tr>';
-
-	$source_data = get_source_info($line['source_type'],$line['source_id']);
-	echo '
-	<tr><th class="std">SOURCE</th><td class="std">'.$source_data.'</td></tr>';
-	echo '
 </table></div>';
 	}
 }
@@ -758,15 +735,9 @@ function display_search()
 	$score_u = "";
 	$time_start = "";
 	$time_end = "";
-	$src_ip = "";
-	$dst_ip = "";
-	$src_port = "";
-	$host = "";
-	$uri = "";
-	$filename = "";
-	$referer = "";
-	$user_agent = "";
-	$proto = "";
+	$meta_field = "";
+	$meta_value = "";
+	$metadata = "";
 	$source = "";
 	$score_op_k = "";
 	$score_op_u = "";
@@ -780,6 +751,7 @@ function display_search()
 		$sql_request_where = "";
 		$analysis_table = False;
 		$signature_table = False;
+		$submition_table = False;
 		$metadata_table = False;
 		if(isset($_POST["md5"]) && !empty($_POST["md5"]))
 		{
@@ -834,72 +806,31 @@ function display_search()
 			$time_start = secure_display($_POST["time_start"]);
 		if(isset($_POST["time_end"]) && !empty($_POST["time_end"]))
 			$time_end = secure_display($_POST["time_end"]);
-		if(isset($_POST["src_ip"]) && !empty($_POST["src_ip"]))
+		if(isset($_POST["meta_field"]) && !empty($_POST["meta_field"]) && isset($_POST["meta_value"]) && !empty($_POST["meta_value"]))
 		{
 			$metadata_table = True;
-			$src_ip = secure_display($_POST["src_ip"]);
-			$sql_request_where .= "AND m.src_ip LIKE '".secure_sql($_POST["src_ip"])."' ";
+			$meta_field = secure_display($_POST["meta_field"]);
+			$meta_value = secure_display($_POST["meta_value"]);
+			$sql_request_where .= "AND m.name = '".secure_sql($_POST["meta_field"])."' AND m.value LIKE '".secure_sql($_POST["meta_value"])."' ";
 		}		
-		if(isset($_POST["dst_ip"]) && !empty($_POST["dst_ip"]))
-		{
-			$metadata_table = True;
-			$dst_ip = secure_display($_POST["dst_ip"]);
-			$sql_request_where .= "AND m.dst_ip LIKE '".secure_sql($_POST["dst_ip"])."' ";
-		}		
-		if(isset($_POST["src_port"]) && !empty($_POST["src_port"]))
-		{
-			$metadata_table = True;
-			$src_port = secure_display($_POST["src_port"]);
-			$sql_request_where .= "AND m.src_port LIKE '".secure_sql($_POST["src_port"])."' ";
-		}		
-		if(isset($_POST["host"]) && !empty($_POST["host"]))
-		{
-			$metadata_table = True;
-			$host = secure_display($_POST["host"]);
-			$sql_request_where .= "AND m.host LIKE '".secure_sql($_POST["host"])."' ";
-		}
-		if(isset($_POST["uri"]) && !empty($_POST["uri"]))
-		{
-			$metadata_table = True;
-			$uri = secure_display($_POST["uri"]);
-			$sql_request_where .= "AND m.uri LIKE '".secure_sql($_POST["uri"])."' ";
-		}
-		if(isset($_POST["fname"]) && !empty($_POST["fname"]))
-		{
-			$metadata_table = True;
-			$filename = secure_display($_POST["fname"]);
-			$sql_request_where .= "AND m.filename LIKE '".secure_sql($_POST["fname"])."' ";
-		}
-		if(isset($_POST["referer"]) && !empty($_POST["referer"]))
-		{
-			$metadata_table = True;
-			$referer = secure_display($_POST["referer"]);
-			$sql_request_where .= "AND m.referer LIKE '".secure_sql($_POST["referer"])."' ";
-		}
-		if(isset($_POST["user_agent"]) && !empty($_POST["user_agent"]))
-		{
-			$metadata_table = True;
-			$user_agent = secure_display($_POST["user_agent"]);
-			$sql_request_where .= "AND m.user_agent LIKE '".secure_sql($_POST["user_agent"])."' ";
-		}
-		if(isset($_POST["proto"]) && !empty($_POST["proto"]))
-		{
-			$metadata_table = True;
-			$proto = secure_display($_POST["proto"]);
-			$sql_request_where .= "AND m.proto LIKE '".secure_sql($_POST["proto"])."' ";
-		}
 		if(isset($_POST["source"]) && !empty($_POST["source"]))
 		{
-			$metadata_table = True;
+			$submition_table = True;
 			$source = secure_display($_POST["source"]);
-			$sql_request_where .= "AND m.source_type LIKE '".secure_sql($_POST["source"])."' ";
+			$sql_request_where .= "AND z.source_type LIKE '".secure_sql($_POST["source"])."' ";
 		}
 		if(substr($sql_request_where,0,4) == "AND ")
 			$sql_request_where = substr($sql_request_where,3,-1);
 		if($metadata_table == True)
 		{
-			$sql_request_where = "t.task_id = m.task_id AND ".$sql_request_where;
+			$submition_table = True;
+			$sql_request_where = "z.submition_id = m.submition_id AND ".$sql_request_where;
 			$sql_request_from.=",metadata m";
+		}
+		if($submition_table == True)
+		{
+			$sql_request_where = "z.task_id = z.task_id AND ".$sql_request_where;
+			$sql_request_from.=",submition z";
 		}
 		if($analysis_table == True)
 		{
@@ -926,6 +857,13 @@ function display_search()
 		$results .= '
 		</table>';
 	}
+	
+	$meta_fields_list = '';
+	$meta_fields = get_metadata_names();
+	if($meta_field != '')
+		$meta_fields_list = '<option value="'.$meta_field.'">'.$meta_field.'</option>"';
+	while($field = $meta_fields->fetchArray())
+		$meta_fields_list .= '<option value="'.$field['name'].'">'.secure_display($field['name']).'</option>';
 
 	echo '<h1>SEARCH FOR TASKS</h1>
 	NB: input data is in LIKE SQL statements, use "%" as wildcards.<br />
@@ -949,15 +887,7 @@ function display_search()
 			</select>
 			<input type="TEXT" name="score_u" value="'.$score_u.'" /></td></tr>
 		<tr><th class="std">TIME</td><td class="std">From <input type="TEXT" name="time_start" value="'.$time_start.'" /> to <input type="TEXT" name="time_end" value="'.$time_end.'" /> (dd/mm/yyyy)</td></tr>
-		<tr><th class="std">SRC IP</td><td class="std"><input type="TEXT" name="src_ip" value="'.$src_ip.'" /></td></tr>
-		<tr><th class="std">DST IP</td><td class="std"><input type="TEXT" name="dst_ip" value="'.$dst_ip.'" /></td></tr>
-		<tr><th class="std">SRC PORT</td><td class="std"><input type="TEXT" name="src_port" value="'.$src_port.'" /></td></tr>
-		<tr><th class="std">HOST</td><td class="std"><input type="TEXT" name="host" value="'.$host.'" /></td></tr>
-		<tr><th class="std">URI</td><td class="std"><input type="TEXT" name="uri" value="'.$uri.'" /></td></tr>
-		<tr><th class="std">FILENAME</td><td class="std"><input type="TEXT" name="fname" value="'.$filename.'" /></td></tr>
-		<tr><th class="std">REFERER</td><td class="std"><input type="TEXT" name="referer" value="'.$referer.'" /></td></tr>
-		<tr><th class="std">USER AGENT</td><td class="std"><input type="TEXT" name="user_agent" value="'.$user_agent.'" /></td></tr>
-		<tr><th class="std">PROTOCOL</td><td class="std"><input type="TEXT" name="proto" value="'.$proto.'" /></td></tr>
+		<tr><th class="std">CUSTOM METADATA</td><td class="std"><select name="meta_field">'.$meta_fields_list.'</select> equals <input type="TEXT" name="meta_value" value="'.$meta_value.'" /></td></tr>
 		<tr><th class="std">SOURCE</td><td class="std"><input type="TEXT" name="source" value="'.$source.'" /></td></tr>
 		<tr><th colspan="2"><input type="submit" name="SEARCH" value="SEARCH" /></th></tr>
 	</table>
@@ -973,15 +903,28 @@ function display_meta_sign()
 
 		remove_trigger($_GET['remove_trigger']);
 	}
-	if(isset($_POST['CREATE']) && isset($_POST['field']) && isset($_POST['description']) && isset($_POST['label']) && isset($_POST['criticity']) && isset($_POST['match']))
+	if(isset($_POST['CREATE']) && isset($_POST['field']) && isset($_POST['description']) && isset($_POST['label']) && isset($_POST['criticity']) && isset($_POST['type']) && 
+		(($_POST['type'] == 'std' && isset($_POST['field']) && isset($_POST['match'])) || ($_POST['type'] == 'meta' && isset($_POST['meta_field']) && isset($_POST['meta_match'])))
+	)
 	{
 		$table = "";
-		$field = $_POST['field'];
 		$description = $_POST['description'];
 		$label = $_POST['label'];
 		$criticity = $_POST['criticity'];
-		$match = $_POST['match'];
-		create_trigger($field,$description,$label,$criticity,$match);
+		$field = '';
+		$type = $_POST['type'];
+		$match = '';
+		if($type == "std" && isset($_POST['field']))
+		{
+			$field = $_POST['field'];
+			$match = $_POST['match'];
+		}
+		if($type == "meta" && isset($_POST['meta_field']))
+		{
+			$match = $_POST['meta_match'];
+			$field = $_POST['meta_field'];
+		}
+		create_trigger($description,$label,$criticity,$field,$match,$type);
 	}
 	$triggerz = get_triggerz();
 	echo '<table>';
@@ -993,6 +936,11 @@ function display_meta_sign()
 		echo '<tr><th class="std">'.secure_display($res['name']).'</th><td>'.$disp.'</td><td><a href="'.$_SERVER['PHP_SELF'].'?meta_sign&crt='.gen_csrf(TRUE).'&remove_trigger='.secure_display($res['name']).'" onclick="return confirm(\'Are you sure?\');">REMOVE</a></td></tr>';
 	}
 	echo '</table>';
+	
+	$meta_fields_list = '';
+	$meta_fields = get_metadata_names();
+	while($field = $meta_fields->fetchArray())
+		$meta_fields_list .= '<option value="'.$field['name'].'">'.secure_display($field['name']).'</option>';
 
 	echo '<h1>CREATE RULE</h1>
 	<form action="'.$_SERVER['PHP_SELF'].'?meta_sign" method="POST">
@@ -1005,15 +953,13 @@ function display_meta_sign()
 			<select name="field">
 				<option value="md5">MD5</option>
 				<option value="sign">SIGNATURE</option>
-				<option value="src_ip">SRC IP</option>
-				<option value="dst_ip">DST_IP</option>
-				<option value="host">HOSTNAME</option>
-				<option value="uri">URI</option>
-				<option value="filename">FILENAME</option>
-				<option value="user_agent">USER AGENT</option>
-				<option value="referer">REFERER</option>
 			</select>
-		matches</th><td class="std"><input type="text" name="match" /> (input data is in LIKE SQL statements, use "%" as wildcards)</td></tr>
+		matches</th><td class="std"><input type="text" name="match" /> (input data is in LIKE SQL statements, use "%" as wildcards)</td><td><input type="radio" name="type" value="std" checked /></td></tr>
+		<tr><th class="std">
+			<select name="meta_field">
+				'.$meta_fields_list.'
+			</select>
+		matches</th><td class="std"><input type="text" name="meta_match" /> (input data is in LIKE SQL statements, use "%" as wildcards)</td><td><input type="radio" name="type" value="meta" /></td></tr>
 		
 		<tr><th colspan="2"><input type="submit" name="CREATE" value="CREATE"/></th></tr>
 	</table>
@@ -1169,13 +1115,13 @@ function display_tasks()
 			
 			$alerts_msg.='<br /><span style="color:'.$criticity.'">'.secure_display($alert['label']).': '.secure_display($alert['description']).'</span>';
 		}
-
-		$metadata_matches = get_task_metadata($res["task_id"]);
+		
+		$submitions = get_task_submitions($res["task_id"]);
 		$counts = Array();
 		$signs = Array();
-		while($meta = $metadata_matches->fetchArray())
+		while($sub = $submitions->fetchArray())
 		{
-			$source_info = get_source_info($meta["source_type"],$meta["source_id"],TRUE);
+			$source_info = get_source_info($sub["source_type"],$sub["source_id"],TRUE);
 			if(in_array($source_info,$signs))
 				$counts[array_search($source_info,$signs)]++;
 			else

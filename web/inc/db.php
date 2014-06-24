@@ -283,37 +283,41 @@ function secure_sql_field($data)
 	}
 	return $new;
 }
-function create_trigger($field,$description,$label,$criticity,$match)
+function create_trigger($description,$label,$criticity,$field,$match,$type)
 {
+	if($label == '' || $criticity == '')
+		return 0;
+
 		$table_s = "";
-		$field_s = secure_sql($field);
                 $description_s = secure_sql($description);
                 $label_s = secure_sql_field($label);
                 $criticity_s = secure_sql($criticity);
+		$field_s = secure_sql($field);
 		$match_s = secure_sql($match);
-               
-		 
 		if(!is_numeric($criticity_s))
 			error('[create_trigger] Criticity not numeric "'.$criticity_s.'"','SECURITY');
+		if($type == "std")
+		{
+			if($field_s == 'md5')
+                        	$table_s = 'task';
+                	elseif($field_s == 'sign')
+                	{
+                        	$table_s = 'signature';
+                        	$field_s = 'title';
+			}
+                	else
+                	{
+                        	error('[create_trigger] Unknown field "'.$field_s.'"','SECURITY');
+			}
+			$request = "CREATE TRIGGER ".$label_s." AFTER INSERT ON ".$table_s." WHEN new.".$field_s." LIKE '%".$match_s."%' BEGIN INSERT INTO triggz(task_id, label, description, criticity) VALUES (new.task_id, '".$label_s."', '".$description_s."', '".$criticity_s."'); END;";
+		}
+		elseif($type == "meta")
+		{
+			$request = "CREATE TRIGGER ".$label_s." AFTER INSERT ON metadata WHEN new.name = '".$field_s."' AND new.value LIKE '%".$match_s."%' BEGIN INSERT INTO triggz(task_id, label, description, criticity) SELECT task_id, '".$label_s."', '".$description_s."', '".$criticity_s."' FROM submition WHERE new.submition_id = submition_id LIMIT 0,1; END;";
+		}
+		else
+			error('[create_trigger] Unknown type','SECURITY');
 		
-		if($field_s == 'md5')
-                        $table_s = 'task';
-                elseif($field_s == 'sign')
-                {
-                        $table_s = 'signature';
-                        $field_s = 'title';
-                }
-                elseif(in_array($field_s,['src_ip','dst_ip','host','uri','filename','user_agent','referer']))
-                {
-                        $table_s = 'metadata';
-                }
-                else
-                {
-                        error('[create_trigger] Unknown field "'.$field_s.'"','SECURITY');
-                }
-		$request = "CREATE TRIGGER ".$label_s." AFTER INSERT ON ".$table_s." WHEN new.".$field_s." LIKE '%".$match_s."%' BEGIN
-   INSERT INTO triggz(task_id, label, description, criticity) VALUES (new.task_id, '".$label_s."', '".$description_s."', '".$criticity_s."');
-END;";
 		get_write_db();
 		query_db($request);
 		drop_write_db();
@@ -341,22 +345,39 @@ function get_task_alerts($task_id)
 	$task_id_s = secure_sql($task_id);
 	if(!is_numeric($task_id_s))
 	{
-		error("[get_task_metadata] Task ID not int: ".$task_id_s,"SECURITY");
+		error("[get_task_alerts] Task ID not int: ".$task_id_s,"SECURITY");
 		return NULL;
 	}
 	$results = query_db("SELECT triggz_id,task_id,label,description,criticity FROM triggz WHERE task_id = '".$task_id_s."' ORDER BY triggz_id DESC");
 	return $results;
 }
-function get_task_metadata($task_id)
+function get_metadata_names()
+{
+	$results = query_db("SELECT name FROM metadata GROUP BY name ORDER BY name");
+	return $results;
+}
+function get_submition_metadata($sub_id)
+{
+	global $db_handler;
+	$sub_id_s = secure_sql($sub_id);
+	if(!is_numeric($sub_id_s))
+	{
+		error("[get_submition_metadata] Submition ID not int: ".$sub_id_s,"SECURITY");
+		return NULL;
+	}
+	$results = query_db("SELECT metadata_id, name, value, submition_id FROM metadata where submition_id= '".$sub_id_s."' ORDER BY metadata_id");
+	return $results;
+}
+function get_task_submitions($task_id)
 {
 	global $db_handler;
 	$task_id_s = secure_sql($task_id);
 	if(!is_numeric($task_id_s))
 	{
-		error("[get_task_metadata] Task ID not int: ".$task_id_s,"SECURITY");
+		error("[get_task_submitions] Task ID not int: ".$task_id_s,"SECURITY");
 		return NULL;
 	}
-	$results = query_db("SELECT meta_id,time,src_ip,dst_ip,proto,src_port,dst_port,uri,filename,magic,task_id,source_type,source_id,host,referer,user_agent,sz FROM metadata WHERE task_id = '".$task_id_s."' ORDER BY meta_id");
+	$results = query_db("SELECT submition_id, time, source_type, source_id, task_id FROM submition WHERE task_id = '".$task_id_s."' ORDER BY submition_id");
 	return $results;	
 }
 function get_alertz($start,$count)
@@ -448,7 +469,7 @@ function new_task($file_path)
 	get_write_db();	
 	$result = query_db("INSERT INTO task(md5) VALUES('".$md5."');");
 	$task_id = $db_handler->lastInsertRowID();
-	query_db("INSERT INTO metadata(task_id,time,source_type) VALUES('".$task_id."','".time()."','3')");
+	query_db("INSERT INTO submition(task_id,time,source_type,source_id) VALUES('".$task_id."','".time()."','3','0')");
 	if($enable_usermode_analysis)
 		query_db("INSERT INTO analysis(cuckoo_id,kernel_analysis,state,cuckoo_server_id,task_id) VALUES(0,0,0,0,'".$task_id."')");
 	if($enable_kernelmode_analysis)
