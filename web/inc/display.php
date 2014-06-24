@@ -641,8 +641,7 @@ function display_config()
 			$sampling);
 	}
 	echo '
-	<h1>CONFIGURATION</h1>
-        <h2 style="color:red;">NOT FUNCTIONAL</h2>';
+	<h1>CONFIGURATION</h1>';
 	$form_b = '';
 	$form_e = '<a href="'.$_SERVER['PHP_SELF'].'?config&edit_main">EDIT</a>';
 	if(!isset($_GET["edit_main"]))
